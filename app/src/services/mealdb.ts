@@ -67,6 +67,18 @@ export interface SimplifiedMeal {
   thumbnail: string
 }
 
+export interface DetailedMeal {
+  id: string
+  name: string
+  thumbnail: string
+  category: string
+  area: string
+  instructions: string
+  ingredients: Array<{ingredient: string, measure: string}>
+  youtubeUrl?: string
+  sourceUrl?: string
+}
+
 class MealDBService {
   private async fetchFromAPI(endpoint: string): Promise<MealDBResponse> {
     try {
@@ -125,6 +137,40 @@ class MealDBService {
       id: meal.idMeal,
       name: meal.strMeal,
       thumbnail: meal.strMealThumb
+    }
+  }
+
+  async getMealWithDetails(id: string): Promise<DetailedMeal> {
+    const data = await this.fetchFromAPI(`/lookup.php?i=${id}`)
+    if (!data.meals || data.meals.length === 0) {
+      throw new Error(`Meal with ID ${id} not found`)
+    }
+
+    const meal = data.meals[0]
+
+    const ingredients: Array<{ingredient: string, measure: string}> = []
+    for (let i = 1; i <= 20; i++) {
+      const ingredient = meal[`strIngredient${i}` as keyof MealDBMeal] as string
+      const measure = meal[`strMeasure${i}` as keyof MealDBMeal] as string
+
+      if (ingredient && ingredient.trim()) {
+        ingredients.push({
+          ingredient: ingredient.trim(),
+          measure: measure ? measure.trim() : ''
+        })
+      }
+    }
+
+    return {
+      id: meal.idMeal,
+      name: meal.strMeal,
+      thumbnail: meal.strMealThumb,
+      category: meal.strCategory,
+      area: meal.strArea,
+      instructions: meal.strInstructions,
+      ingredients,
+      youtubeUrl: meal.strYoutube || undefined,
+      sourceUrl: meal.strSource || undefined
     }
   }
 }

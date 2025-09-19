@@ -1,13 +1,18 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { weeklyMealService, type WeeklyMeal } from '../services/pocketbase'
-import { mealDBService } from '../services/mealdb'
+import { mealDBService, type DetailedMeal } from '../services/mealdb'
 
 // State
 const meals = ref<WeeklyMeal[]>([])
 const loading = ref(false)
 const error = ref<string | null>(null)
 const generatingMeal = ref<string | null>(null)
+
+// Modal state
+const showModal = ref(false)
+const selectedMeal = ref<DetailedMeal | null>(null)
+const loadingRecipe = ref(false)
 
 // Week days
 const weekDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'] as const
@@ -128,6 +133,29 @@ const randomizeMealForDay = async (dayOfWeek: typeof weekDays[number]) => {
   }
 }
 
+// Modal functions
+const openRecipeModal = async (meal: WeeklyMeal) => {
+  try {
+    loadingRecipe.value = true
+    showModal.value = true
+    selectedMeal.value = null
+
+    const detailedMeal = await mealDBService.getMealWithDetails(meal.meal_id)
+    selectedMeal.value = detailedMeal
+  } catch (err) {
+    console.error('Error loading recipe details:', err)
+    closeModal()
+  } finally {
+    loadingRecipe.value = false
+  }
+}
+
+const closeModal = () => {
+  showModal.value = false
+  selectedMeal.value = null
+  loadingRecipe.value = false
+}
+
 // Initialize on mount
 onMounted(() => {
   loadMealsForWeek()
@@ -150,12 +178,6 @@ onMounted(() => {
             Your delicious meals for {{ new Date(currentWeekStart).toLocaleDateString() }} - {{ new Date(new Date(currentWeekStart).getTime() + 4 * 24 * 60 * 60 * 1000).toLocaleDateString() }}
           </p>
 
-          <!-- Week Pills -->
-          <div class="flex justify-center gap-4 mb-12 flex-wrap">
-            <span v-for="day in weekDays" :key="day" class="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-sm border border-white/30">
-              {{ day }}
-            </span>
-          </div>
         </div>
       </div>
     </section>
@@ -204,6 +226,7 @@ onMounted(() => {
               v-for="day in weekDays"
               :key="day"
               class="day-card bg-white rounded-xl p-6 text-center shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl cursor-pointer"
+              @click="mealMap[day] ? openRecipeModal(mealMap[day]) : null"
             >
               <!-- Day Name -->
               <div class="day-name font-bold text-pink-600 mb-3 text-lg">{{ day }}</div>
@@ -227,7 +250,7 @@ onMounted(() => {
 
                 <!-- Randomize Button -->
                 <button
-                  @click="randomizeMealForDay(day)"
+                  @click.stop="randomizeMealForDay(day)"
                   :disabled="generatingMeal === day"
                   class="w-full px-4 py-2 bg-gradient-to-r from-pink-500 to-purple-600 text-white text-sm font-medium rounded-lg hover:from-pink-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg"
                 >
@@ -258,7 +281,7 @@ onMounted(() => {
                 </div>
                 <p class="text-sm text-gray-500 mb-4 h-10 flex items-center justify-center">No meal planned</p>
                 <button
-                  @click="randomizeMealForDay(day)"
+                  @click.stop="randomizeMealForDay(day)"
                   :disabled="generatingMeal === day"
                   class="w-full px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
@@ -289,6 +312,128 @@ onMounted(() => {
         </div>
       </div>
     </section>
+
+    <!-- Recipe Modal -->
+    <div
+      v-if="showModal"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+      @click="closeModal"
+    >
+      <div
+        class="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl"
+        @click.stop
+      >
+        <!-- Loading State -->
+        <div v-if="loadingRecipe" class="p-8 text-center">
+          <div class="inline-flex items-center">
+            <svg class="animate-spin -ml-1 mr-3 h-8 w-8 text-purple-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span class="text-lg text-purple-600">Loading recipe details...</span>
+          </div>
+        </div>
+
+        <!-- Recipe Content -->
+        <div v-else-if="selectedMeal" class="relative">
+          <!-- Close Button -->
+          <button
+            @click="closeModal"
+            class="absolute top-4 right-4 z-10 bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-lg hover:bg-white transition-colors"
+          >
+            <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+
+          <!-- Recipe Header -->
+          <div class="relative">
+            <img
+              :src="selectedMeal.thumbnail"
+              :alt="selectedMeal.name"
+              class="w-full h-64 md:h-80 object-cover rounded-t-xl"
+            />
+            <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent rounded-t-xl"></div>
+            <div class="absolute bottom-4 left-4 text-white">
+              <h2 class="text-3xl md:text-4xl font-bold mb-2">{{ selectedMeal.name }}</h2>
+              <div class="flex items-center gap-4 text-sm">
+                <span class="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full">{{ selectedMeal.category }}</span>
+                <span class="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full">{{ selectedMeal.area }} Cuisine</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recipe Body -->
+          <div class="p-6 md:p-8">
+            <div class="grid md:grid-cols-2 gap-8">
+              <!-- Ingredients -->
+              <div>
+                <h3 class="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+                  <svg class="w-6 h-6 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                  </svg>
+                  Ingredients
+                </h3>
+                <ul class="space-y-2">
+                  <li
+                    v-for="ingredient in selectedMeal.ingredients"
+                    :key="ingredient.ingredient"
+                    class="flex justify-between items-center py-2 px-3 bg-gray-50 rounded-lg"
+                  >
+                    <span class="font-medium text-gray-800">{{ ingredient.ingredient }}</span>
+                    <span class="text-purple-600 font-semibold">{{ ingredient.measure }}</span>
+                  </li>
+                </ul>
+              </div>
+
+              <!-- Instructions -->
+              <div>
+                <h3 class="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+                  <svg class="w-6 h-6 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                  </svg>
+                  Instructions
+                </h3>
+                <div class="prose prose-gray max-w-none">
+                  <p class="text-gray-700 leading-relaxed whitespace-pre-line">{{ selectedMeal.instructions }}</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Additional Links -->
+            <div v-if="selectedMeal.youtubeUrl || selectedMeal.sourceUrl" class="mt-8 pt-6 border-t border-gray-200">
+              <h3 class="text-lg font-semibold text-gray-800 mb-4">Additional Resources</h3>
+              <div class="flex gap-4">
+                <a
+                  v-if="selectedMeal.youtubeUrl"
+                  :href="selectedMeal.youtubeUrl"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                  </svg>
+                  Watch Video
+                </a>
+                <a
+                  v-if="selectedMeal.sourceUrl"
+                  :href="selectedMeal.sourceUrl"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                >
+                  <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                  </svg>
+                  Source Recipe
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
