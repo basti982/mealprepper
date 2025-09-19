@@ -65,6 +65,12 @@ const loadMealsForWeek = async () => {
 const generateMealsForWeek = async () => {
   try {
     loading.value = true
+    error.value = null
+
+    // First, delete any existing meals for this week
+    await weeklyMealService.deleteMealsForWeek(currentWeekStart.value)
+
+    // Generate new random meals
     const randomMeals = await mealDBService.getMultipleRandomMeals(5)
 
     const newMeals: WeeklyMeal[] = []
@@ -87,6 +93,8 @@ const generateMealsForWeek = async () => {
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Failed to generate meals'
     console.error('Error generating meals:', err)
+  } finally {
+    loading.value = false
   }
 }
 

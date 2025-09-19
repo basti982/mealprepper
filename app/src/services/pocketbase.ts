@@ -179,5 +179,16 @@ export const weeklyMealService = {
       console.error('Failed to delete meal:', error)
       throw error
     }
+  },
+
+  async deleteMealsForWeek(weekStart: string): Promise<void> {
+    try {
+      const existingMeals = await this.getMealsForWeek(weekStart)
+      const deletePromises = existingMeals.map(meal => this.deleteMeal(meal.id!))
+      await Promise.all(deletePromises)
+    } catch (error) {
+      console.error('Failed to delete meals for week:', error)
+      throw error
+    }
   }
 }
