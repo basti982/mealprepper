@@ -33,7 +33,9 @@
       "mcp__playwright__browser_console_messages",
       "mcp__playwright__browser_network_requests",
       "Bash(npm uninstall:*)",
-      "mcp__playwright__browser_snapshot"
+      "mcp__playwright__browser_snapshot",
+      "Bash(git add:*)",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": []

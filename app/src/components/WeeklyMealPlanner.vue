@@ -14,6 +14,11 @@ const showModal = ref(false)
 const selectedMeal = ref<DetailedMeal | null>(null)
 const loadingRecipe = ref(false)
 
+// Shopping list state
+const showShoppingList = ref(false)
+const shoppingListDetails = ref<DetailedMeal[]>([])
+const loadingShoppingList = ref(false)
+
 // Week days
 const weekDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'] as const
 
@@ -37,6 +42,126 @@ const mealMap = computed(() => {
     map[meal.day_of_week] = meal
   })
   return map
+})
+
+// Shopping list interfaces
+interface ShoppingListItem {
+  ingredient: string
+  measure: string
+  category: string
+  checked: boolean
+}
+
+interface ShoppingListCategory {
+  name: string
+  items: ShoppingListItem[]
+  icon: string
+}
+
+// Helper function to categorize ingredients
+const categorizeIngredient = (ingredient: string): string => {
+  const ingredient_lower = ingredient.toLowerCase()
+
+  if (ingredient_lower.includes('beef') || ingredient_lower.includes('chicken') ||
+      ingredient_lower.includes('pork') || ingredient_lower.includes('lamb') ||
+      ingredient_lower.includes('turkey') || ingredient_lower.includes('fish') ||
+      ingredient_lower.includes('salmon') || ingredient_lower.includes('tuna') ||
+      ingredient_lower.includes('shrimp') || ingredient_lower.includes('bacon')) {
+    return 'Meat & Seafood'
+  }
+
+  if (ingredient_lower.includes('milk') || ingredient_lower.includes('cheese') ||
+      ingredient_lower.includes('butter') || ingredient_lower.includes('yogurt') ||
+      ingredient_lower.includes('cream') || ingredient_lower.includes('egg')) {
+    return 'Dairy & Eggs'
+  }
+
+  if (ingredient_lower.includes('tomato') || ingredient_lower.includes('onion') ||
+      ingredient_lower.includes('carrot') || ingredient_lower.includes('potato') ||
+      ingredient_lower.includes('pepper') || ingredient_lower.includes('mushroom') ||
+      ingredient_lower.includes('garlic') || ingredient_lower.includes('lettuce') ||
+      ingredient_lower.includes('spinach') || ingredient_lower.includes('cabbage')) {
+    return 'Fresh Produce'
+  }
+
+  if (ingredient_lower.includes('bread') || ingredient_lower.includes('pasta') ||
+      ingredient_lower.includes('rice') || ingredient_lower.includes('flour') ||
+      ingredient_lower.includes('oats') || ingredient_lower.includes('noodles')) {
+    return 'Grains & Bread'
+  }
+
+  if (ingredient_lower.includes('oil') || ingredient_lower.includes('salt') ||
+      ingredient_lower.includes('pepper') || ingredient_lower.includes('sugar') ||
+      ingredient_lower.includes('vinegar') || ingredient_lower.includes('herbs') ||
+      ingredient_lower.includes('spice') || ingredient_lower.includes('sauce')) {
+    return 'Condiments & Spices'
+  }
+
+  return 'Pantry Items'
+}
+
+// Computed shopping list with aggregation and categorization
+const shoppingList = computed((): ShoppingListCategory[] => {
+  if (shoppingListDetails.value.length === 0) return []
+
+  // Aggregate all ingredients
+  const ingredientMap = new Map<string, { measure: string, category: string }>()
+
+  shoppingListDetails.value.forEach(meal => {
+    meal.ingredients.forEach(ing => {
+      const key = ing.ingredient.toLowerCase().trim()
+      const category = categorizeIngredient(ing.ingredient)
+
+      if (ingredientMap.has(key)) {
+        const existing = ingredientMap.get(key)!
+        // Simple consolidation - for now just combine measures with "+"
+        const newMeasure = existing.measure && ing.measure ?
+          `${existing.measure} + ${ing.measure}` :
+          existing.measure || ing.measure
+        ingredientMap.set(key, { measure: newMeasure, category })
+      } else {
+        ingredientMap.set(key, { measure: ing.measure, category })
+      }
+    })
+  })
+
+  // Group by category
+  const categories = new Map<string, ShoppingListItem[]>()
+
+  ingredientMap.forEach((data, ingredient) => {
+    const item: ShoppingListItem = {
+      ingredient: ingredient.charAt(0).toUpperCase() + ingredient.slice(1),
+      measure: data.measure,
+      category: data.category,
+      checked: false
+    }
+
+    if (!categories.has(data.category)) {
+      categories.set(data.category, [])
+    }
+    categories.get(data.category)!.push(item)
+  })
+
+  // Convert to array with icons
+  const categoryIcons = {
+    'Meat & Seafood': '🥩',
+    'Dairy & Eggs': '🥛',
+    'Fresh Produce': '🥕',
+    'Grains & Bread': '🍞',
+    'Condiments & Spices': '🧂',
+    'Pantry Items': '🏪'
+  }
+
+  return Array.from(categories.entries()).map(([name, items]) => ({
+    name,
+    items: items.sort((a, b) => a.ingredient.localeCompare(b.ingredient)),
+    icon: categoryIcons[name as keyof typeof categoryIcons] || '📦'
+  })).sort((a, b) => a.name.localeCompare(b.name))
+})
+
+// Total ingredient count
+const totalIngredients = computed(() => {
+  return shoppingList.value.reduce((total, category) => total + category.items.length, 0)
 })
 
 // Load meals for current week
@@ -162,6 +287,34 @@ const closeModal = () => {
   showModal.value = false
   selectedMeal.value = null
   loadingRecipe.value = false
+}
+
+// Shopping list functions
+const generateShoppingList = async () => {
+  try {
+    loadingShoppingList.value = true
+    const mealDetails: DetailedMeal[] = []
+
+    // Fetch detailed information for all current meals
+    for (const meal of meals.value) {
+      const details = await mealDBService.getMealWithDetails(meal.meal_id)
+      mealDetails.push(details)
+    }
+
+    shoppingListDetails.value = mealDetails
+  } catch (err) {
+    console.error('Error generating shopping list:', err)
+  } finally {
+    loadingShoppingList.value = false
+  }
+}
+
+const toggleShoppingList = async () => {
+  if (!showShoppingList.value) {
+    // Generate shopping list when opening
+    await generateShoppingList()
+  }
+  showShoppingList.value = !showShoppingList.value
 }
 
 // Initialize on mount
@@ -303,6 +456,120 @@ onMounted(() => {
           <p class="text-center mt-8 text-gray-600 italic">
             👆 Click any Randomize button to swap meals instantly
           </p>
+
+          <!-- Shopping List Section -->
+          <div class="mt-8">
+            <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+              <!-- Shopping List Header -->
+              <div
+                class="px-6 py-4 bg-gradient-to-r from-green-50 to-green-100 border-b border-gray-200 cursor-pointer hover:from-green-100 hover:to-green-200 transition-all duration-200"
+                @click="toggleShoppingList"
+              >
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center">
+                    <div class="flex items-center justify-center w-10 h-10 bg-green-500 text-white rounded-full mr-4">
+                      <svg v-if="loadingShoppingList" class="animate-spin w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4m2.6 8v6a2 2 0 002 2h6a2 2 0 002-2v-6m-8 0V9a2 2 0 012-2h4a2 2 0 012 2v4"></path>
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 class="text-lg font-semibold text-gray-800">Weekly Shopping List</h3>
+                      <p class="text-sm text-gray-600">
+                        {{ totalIngredients }} ingredients from {{ meals.length }} meals
+                      </p>
+                    </div>
+                  </div>
+                  <div class="flex items-center">
+                    <svg
+                      class="w-5 h-5 text-gray-500 transform transition-transform duration-200"
+                      :class="{ 'rotate-180': showShoppingList }"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Shopping List Content -->
+              <div v-if="showShoppingList" class="p-6">
+                <div v-if="loadingShoppingList" class="text-center py-8">
+                  <div class="inline-flex items-center text-gray-600">
+                    <svg class="animate-spin -ml-1 mr-3 h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Generating shopping list...
+                  </div>
+                </div>
+
+                <div v-else-if="shoppingList.length === 0" class="text-center py-8 text-gray-500">
+                  <p>No meals selected yet. Add some meals to generate a shopping list!</p>
+                </div>
+
+                <div v-else class="space-y-6">
+                  <!-- Category Groups -->
+                  <div v-for="category in shoppingList" :key="category.name" class="border border-gray-200 rounded-lg overflow-hidden">
+                    <!-- Category Header -->
+                    <div class="bg-gray-50 px-4 py-3 border-b border-gray-200">
+                      <h4 class="font-semibold text-gray-800 flex items-center">
+                        <span class="text-xl mr-3">{{ category.icon }}</span>
+                        {{ category.name }}
+                        <span class="ml-2 text-sm text-gray-500">({{ category.items.length }} items)</span>
+                      </h4>
+                    </div>
+
+                    <!-- Category Items -->
+                    <div class="p-4">
+                      <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        <div
+                          v-for="item in category.items"
+                          :key="item.ingredient"
+                          class="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                        >
+                          <div class="flex items-center flex-1">
+                            <input
+                              type="checkbox"
+                              :id="`ingredient-${item.ingredient}`"
+                              v-model="item.checked"
+                              class="mr-3 h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                            >
+                            <label
+                              :for="`ingredient-${item.ingredient}`"
+                              class="flex-1 text-sm font-medium text-gray-800 cursor-pointer"
+                              :class="{ 'line-through text-gray-500': item.checked }"
+                            >
+                              {{ item.ingredient }}
+                            </label>
+                          </div>
+                          <span class="text-sm text-gray-600 ml-2">{{ item.measure }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Shopping List Actions -->
+                  <div class="flex justify-center pt-4 border-t border-gray-200">
+                    <button
+                      @click="generateShoppingList"
+                      class="inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors shadow-md"
+                    >
+                      <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                      </svg>
+                      Refresh List
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
 
           <!-- Generate New Week Button -->
           <div class="text-center mt-12">
