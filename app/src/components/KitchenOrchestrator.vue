@@ -244,81 +244,85 @@ function getRecipeName(task: CookingTask) {
 </script>
 
 <template>
-  <div class="p-6 max-w-7xl mx-auto">
+  <div class="p-4 max-w-6xl mx-auto">
+    <!-- Header -->
+    <div class="mb-4">
+      <h2 class="text-xl font-semibold text-gray-900">Kitchen Orchestration</h2>
+      <p class="text-sm text-gray-600">Manage your cooking tasks and schedule</p>
+    </div>
+    <!-- Updated: Clean, compact styling -->
+
     <!-- Error Display -->
-    <div v-if="error" class="mb-4 p-4 bg-red-100 text-red-700 rounded-lg">
+    <div v-if="error" class="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded text-sm">
       {{ error }}
-      <button @click="error = null" class="ml-2 text-red-500 hover:text-red-700">×</button>
+      <button @click="error = null" class="float-right text-red-500 hover:text-red-700">×</button>
     </div>
 
-    <!-- Loading Indicator -->
-    <div v-if="loading" class="fixed top-4 right-4 bg-blue-500 text-white px-4 py-2 rounded-lg">
+    <!-- Loading -->
+    <div v-if="loading" class="fixed top-4 right-4 bg-blue-500 text-white px-3 py-2 rounded text-sm">
       Loading...
     </div>
 
-    <div class="bg-white rounded-lg shadow-lg p-6">
-      <h2 class="text-2xl font-bold mb-6 text-gray-800">Kitchen Orchestration Timeline</h2>
-
-      <!-- Session Info & Actions -->
-      <div class="mb-6 flex items-center justify-between">
-        <div>
-          <span class="text-gray-600">Session: </span>
-          <span class="font-semibold">{{ currentSession?.date || 'No session' }}</span>
-          <span class="ml-4 text-gray-600">Duration: </span>
-          <span class="font-semibold">{{ formatTime(sessionDuration) }}</span>
+    <!-- Session Info & Actions -->
+    <div class="bg-white rounded-lg shadow-sm border p-4 mb-4">
+      <div class="flex justify-between items-center mb-4">
+        <div class="flex items-center space-x-4 text-sm text-gray-600">
+          <span>Session: {{ currentSession?.date || 'No session' }}</span>
+          <span>Duration: {{ formatTime(sessionDuration) }}</span>
+          <span>{{ tasks.length }} tasks</span>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex space-x-2">
           <button
             @click="showAddRecipe = true"
-            class="px-3 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">
+            class="px-3 py-1 bg-gray-600 text-white rounded text-sm hover:bg-gray-700">
             + Recipe
           </button>
           <button
             @click="showAddTask = true"
-            class="px-3 py-2 bg-purple-600 text-white rounded hover:bg-purple-700">
+            class="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700">
             + Task
           </button>
           <button
             @click="optimizeSchedule"
             :disabled="tasks.length === 0"
-            class="px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50">
-            Optimize Schedule
+            class="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700 disabled:opacity-50">
+            Optimize
           </button>
         </div>
       </div>
 
       <!-- Add Recipe Form -->
-      <div v-if="showAddRecipe" class="mb-4 p-4 border rounded-lg bg-gray-50">
-        <h3 class="font-semibold mb-2">Add Recipe</h3>
-        <div class="grid grid-cols-3 gap-2">
+      <div v-if="showAddRecipe" class="p-4 bg-gray-50 rounded border mb-4">
+        <h3 class="text-sm font-medium mb-3">Add Recipe</h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
           <input
             v-model="newRecipe.name"
             placeholder="Recipe name"
-            class="px-3 py-2 border rounded">
+            class="px-3 py-2 border rounded text-sm">
           <input
             v-model.number="newRecipe.total_time"
             type="number"
-            placeholder="Total time (min)"
-            class="px-3 py-2 border rounded">
+            placeholder="Time (min)"
+            class="px-3 py-2 border rounded text-sm">
           <input
             v-model.number="newRecipe.servings"
             type="number"
             placeholder="Servings"
-            class="px-3 py-2 border rounded">
+            class="px-3 py-2 border rounded text-sm">
         </div>
-        <div class="mt-2 flex gap-2">
-          <button @click="addRecipe" class="px-3 py-1 bg-blue-500 text-white rounded">Save</button>
-          <button @click="showAddRecipe = false" class="px-3 py-1 bg-gray-500 text-white rounded">Cancel</button>
+        <div class="flex justify-end space-x-2 mt-3">
+          <button @click="showAddRecipe = false" class="px-3 py-1 text-gray-600 text-sm">Cancel</button>
+          <button @click="addRecipe" class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Save</button>
         </div>
       </div>
 
       <!-- Add Task Form -->
-      <div v-if="showAddTask" class="mb-4 p-4 border rounded-lg bg-gray-50">
-        <h3 class="font-semibold mb-2">Add Task</h3>
-        <div class="grid grid-cols-2 gap-2 mb-2">
+      <div v-if="showAddTask" class="p-4 bg-gray-50 rounded border mb-4">
+        <h3 class="text-sm font-medium mb-3">Add Task</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
           <select
             v-model="newTask.recipe_id"
-            class="px-3 py-2 border rounded">
+            class="px-3 py-2 border rounded text-sm">
             <option value="">Select Recipe</option>
             <option v-for="recipe in recipes" :key="recipe.id" :value="recipe.id">
               {{ recipe.name }}
@@ -327,89 +331,139 @@ function getRecipeName(task: CookingTask) {
           <input
             v-model="newTask.task_name"
             placeholder="Task name"
-            class="px-3 py-2 border rounded">
+            class="px-3 py-2 border rounded text-sm">
         </div>
-        <div class="grid grid-cols-3 gap-2">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
           <input
             v-model.number="newTask.duration_minutes"
             type="number"
             placeholder="Duration (min)"
-            class="px-3 py-2 border rounded">
+            class="px-3 py-2 border rounded text-sm">
           <select
             v-model="newTask.appliance"
-            class="px-3 py-2 border rounded">
+            class="px-3 py-2 border rounded text-sm">
             <option v-for="appliance in appliances" :key="appliance.id" :value="appliance.id">
               {{ appliance.name }}
             </option>
           </select>
-          <label class="flex items-center gap-2">
+          <label class="flex items-center space-x-2">
             <input
               v-model="newTask.can_parallel"
-              type="checkbox">
-            <span>Can parallel</span>
+              type="checkbox"
+              class="rounded">
+            <span class="text-sm">Can parallel</span>
           </label>
         </div>
-        <div class="mt-2 flex gap-2">
-          <button @click="addTask" class="px-3 py-1 bg-blue-500 text-white rounded">Add</button>
-          <button @click="showAddTask = false" class="px-3 py-1 bg-gray-500 text-white rounded">Cancel</button>
+        <div class="flex justify-end space-x-2 mt-3">
+          <button @click="showAddTask = false" class="px-3 py-1 text-gray-600 text-sm">Cancel</button>
+          <button @click="addTask" class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Add</button>
         </div>
       </div>
+    </div>
 
-      <!-- Timeline Grid -->
-      <div class="border border-gray-200 rounded-lg p-4 bg-gray-50">
+    <!-- Timeline -->
+    <div class="bg-white rounded-lg shadow-sm border p-4 mb-4">
+      <h3 class="text-lg font-medium mb-4">Timeline</h3>
+
+      <!-- Desktop Timeline -->
+      <div class="hidden md:block">
         <!-- Time markers -->
-        <div class="relative h-6 mb-4 border-b border-gray-300">
-          <div v-for="hour in 4" :key="hour"
-               :style="{ left: `${(hour - 1) * 60 * timelineScale}px` }"
-               class="absolute text-xs text-gray-600">
-            {{ formatTime((hour - 1) * 60) }}
+        <div class="flex mb-2">
+          <div class="w-24 flex-shrink-0"></div>
+          <div class="flex-1 flex justify-between text-xs text-gray-600 px-2">
+            <span v-for="hour in 4" :key="hour">{{ formatTime((hour - 1) * 60) }}</span>
           </div>
         </div>
 
         <!-- Appliance Rows -->
-        <div class="space-y-3">
-          <div v-for="appliance in appliances" :key="appliance.id" class="relative">
-            <div class="absolute left-0 top-0 w-24 text-sm font-medium text-gray-700">
+        <div class="space-y-2">
+          <div v-for="appliance in appliances" :key="appliance.id" class="flex items-center">
+            <div class="w-24 text-sm font-medium text-gray-700 flex-shrink-0">
               {{ appliance.name }}
             </div>
-            <div class="ml-28 relative h-10 bg-gray-100 rounded border border-gray-200">
+            <div class="flex-1 relative h-8 bg-gray-100 rounded ml-4">
               <div v-for="task in tasks.filter(t => t.appliance === appliance.id)"
                    :key="task.id"
                    :style="getTaskPosition(task)"
-                   :class="[getApplianceColor(task.appliance), 'absolute top-1 h-8 rounded text-white text-xs flex items-center justify-between px-2 cursor-pointer hover:opacity-90']">
+                   :class="[getApplianceColor(task.appliance), 'absolute top-0.5 h-7 rounded text-white text-xs flex items-center px-2']">
                 <span class="truncate">{{ task.task_name }}</span>
                 <button
                   v-if="task.id"
                   @click="deleteTask(task.id)"
-                  class="ml-1 text-white hover:text-red-200">×</button>
+                  class="ml-1 text-white hover:text-red-200 text-sm">×</button>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Task List -->
-      <div class="mt-6">
-        <h3 class="text-lg font-semibold mb-3">Scheduled Tasks ({{ tasks.length }})</h3>
-        <div v-if="tasks.length === 0" class="text-gray-500">
-          No tasks scheduled. Add recipes and tasks to get started!
+      <!-- Mobile Timeline -->
+      <div class="md:hidden">
+        <!-- Time reference -->
+        <div class="mb-4 p-2 bg-gray-50 rounded text-xs text-gray-600">
+          Session Duration: {{ formatTime(sessionDuration) }}
         </div>
-        <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div v-for="task in tasks" :key="task.id"
-               class="border border-gray-200 rounded-lg p-3 hover:bg-gray-50">
-            <div class="flex justify-between items-start">
-              <div>
-                <div class="font-medium">{{ task.task_name }}</div>
-                <div class="text-sm text-gray-600">
-                  {{ getRecipeName(task) }} • {{ task.duration_minutes }} min
-                </div>
+
+        <!-- Mobile appliance list -->
+        <div class="space-y-3">
+          <div v-for="appliance in appliances" :key="appliance.id">
+            <div class="flex items-center justify-between mb-2">
+              <h4 class="text-sm font-medium text-gray-700">{{ appliance.name }}</h4>
+              <span class="text-xs text-gray-500">
+                {{ tasks.filter(t => t.appliance === appliance.id).length }} tasks
+              </span>
+            </div>
+            <div class="space-y-1">
+              <div v-if="tasks.filter(t => t.appliance === appliance.id).length === 0"
+                   class="text-xs text-gray-400 italic py-2">
+                No tasks scheduled
               </div>
-              <div class="text-right">
-                <div class="text-sm font-medium">{{ formatTime(task.start_time || 0) }}</div>
-                <div :class="[getApplianceColor(task.appliance), 'text-xs text-white px-2 py-1 rounded mt-1']">
-                  {{ task.appliance }}
+              <div v-else
+                   v-for="task in tasks.filter(t => t.appliance === appliance.id)"
+                   :key="task.id"
+                   :class="[getApplianceColor(task.appliance), 'p-2 rounded text-white text-xs flex justify-between items-center']">
+                <div>
+                  <div class="font-medium">{{ task.task_name }}</div>
+                  <div class="opacity-75">{{ task.duration_minutes }}min • Start: {{ formatTime(task.start_time || 0) }}</div>
                 </div>
+                <button
+                  v-if="task.id"
+                  @click="deleteTask(task.id)"
+                  class="text-white hover:text-red-200 text-sm ml-2">×</button>
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Task List -->
+    <div class="bg-white rounded-lg shadow-sm border p-4">
+      <h3 class="text-lg font-medium mb-3">Tasks ({{ tasks.length }})</h3>
+      <div v-if="tasks.length === 0" class="text-center py-8 text-gray-500">
+        No tasks yet. Add recipes and tasks to get started!
+      </div>
+      <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div v-for="task in tasks" :key="task.id"
+             class="border rounded p-3 hover:bg-gray-50">
+          <div class="flex justify-between items-start">
+            <div>
+              <div class="font-medium text-sm">{{ task.task_name }}</div>
+              <div class="text-xs text-gray-600">
+                {{ getRecipeName(task) }} • {{ task.duration_minutes }}min
+              </div>
+              <div class="flex items-center space-x-1 mt-1">
+                <span :class="[getApplianceColor(task.appliance), 'text-xs text-white px-2 py-0.5 rounded']">
+                  {{ appliances.find(a => a.id === task.appliance)?.name || task.appliance }}
+                </span>
+                <span v-if="task.can_parallel" class="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded">
+                  Parallel
+                </span>
+              </div>
+            </div>
+            <div class="text-right">
+              <div class="text-sm font-medium">{{ formatTime(task.start_time || 0) }}</div>
+              <div class="text-xs text-gray-500">Start</div>
             </div>
           </div>
         </div>

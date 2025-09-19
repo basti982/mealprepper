@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MealPrep Sunday - Cook Once, Eat Well All Week</title>
+    <title>Weekly Meal Planner - Never Decide What's for Dinner Again</title>
     <style>
         * {
             margin: 0;
@@ -26,92 +26,149 @@
 
         /* Hero Section */
         .hero {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
             color: white;
-            padding: 80px 0;
+            padding: 100px 0;
             text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: drift 20s linear infinite;
+        }
+
+        @keyframes drift {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50px, 50px); }
         }
 
         .hero h1 {
-            font-size: 3rem;
+            font-size: 3.5rem;
             margin-bottom: 20px;
             font-weight: 700;
+            position: relative;
+            z-index: 1;
         }
 
         .hero p {
-            font-size: 1.3rem;
+            font-size: 1.4rem;
             margin-bottom: 40px;
             opacity: 0.95;
-            max-width: 600px;
+            max-width: 700px;
             margin-left: auto;
             margin-right: auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        .week-preview {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+            position: relative;
+            z-index: 1;
+        }
+
+        .day-pill {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
         }
 
         .cta-button {
             display: inline-block;
-            padding: 15px 40px;
+            padding: 18px 45px;
             background: #fff;
-            color: #667eea;
+            color: #f5576c;
             text-decoration: none;
             border-radius: 50px;
-            font-size: 1.1rem;
+            font-size: 1.2rem;
             font-weight: 600;
             cursor: pointer;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            transition: all 0.3s ease;
             border: none;
+            position: relative;
+            z-index: 1;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
         }
 
         .cta-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.25);
         }
 
         /* Features Section */
         .features {
-            padding: 80px 0;
+            padding: 100px 0;
             background: #f8f9fa;
         }
 
         .features h2 {
             text-align: center;
-            font-size: 2.5rem;
-            margin-bottom: 60px;
+            font-size: 2.8rem;
+            margin-bottom: 20px;
             color: #333;
+        }
+
+        .features-subtitle {
+            text-align: center;
+            color: #666;
+            font-size: 1.2rem;
+            margin-bottom: 60px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
         }
 
         .features-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 40px;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 50px;
         }
 
         .feature-card {
             background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.08);
             text-align: center;
-            transition: transform 0.3s ease;
+            transition: all 0.3s ease;
+            position: relative;
         }
 
         .feature-card:hover {
-            transform: translateY(-5px);
+            transform: translateY(-8px);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.12);
         }
 
         .feature-icon {
-            width: 60px;
-            height: 60px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 auto 20px;
-            font-size: 24px;
+            margin: 0 auto 25px;
+            font-size: 36px;
         }
 
         .feature-card h3 {
-            font-size: 1.5rem;
+            font-size: 1.6rem;
             margin-bottom: 15px;
             color: #333;
         }
@@ -119,81 +176,227 @@
         .feature-card p {
             color: #666;
             line-height: 1.8;
+            font-size: 1.05rem;
+        }
+
+        .feature-highlight {
+            display: inline-block;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 5px;
+            font-size: 0.85rem;
+            margin-top: 15px;
+            font-weight: 600;
         }
 
         /* How It Works Section */
         .how-it-works {
-            padding: 80px 0;
+            padding: 100px 0;
             background: white;
         }
 
         .how-it-works h2 {
             text-align: center;
-            font-size: 2.5rem;
+            font-size: 2.8rem;
             margin-bottom: 60px;
             color: #333;
         }
 
-        .steps {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 40px;
-            max-width: 900px;
+        .process-flow {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            max-width: 1000px;
             margin: 0 auto;
+            flex-wrap: wrap;
+            gap: 30px;
         }
 
-        .step {
+        .process-step {
+            flex: 1;
+            min-width: 250px;
             text-align: center;
             position: relative;
+            padding: 20px;
         }
 
-        .step-number {
-            width: 50px;
-            height: 50px;
-            background: #667eea;
-            color: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 20px;
-            font-size: 1.5rem;
+        .process-step:not(:last-child)::after {
+            content: '→';
+            position: absolute;
+            right: -30px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 2rem;
+            color: #f5576c;
             font-weight: bold;
         }
 
-        .step h3 {
-            font-size: 1.3rem;
+        .step-visual {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 25px;
+            background: linear-gradient(135deg, #f093fb20 0%, #f5576c20 100%);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            border: 2px solid #f5576c30;
+        }
+
+        .process-step h3 {
+            font-size: 1.4rem;
             margin-bottom: 10px;
             color: #333;
         }
 
-        .step p {
+        .process-step p {
             color: #666;
+            font-size: 1rem;
+        }
+
+        /* Demo Section */
+        .demo {
+            padding: 100px 0;
+            background: linear-gradient(135deg, #f093fb10 0%, #f5576c10 100%);
+        }
+
+        .demo h2 {
+            text-align: center;
+            font-size: 2.8rem;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .demo-subtitle {
+            text-align: center;
+            color: #666;
+            font-size: 1.2rem;
+            margin-bottom: 50px;
+        }
+
+        .week-display {
+            max-width: 900px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 20px;
+        }
+
+        .day-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .day-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+
+        .day-name {
+            font-weight: bold;
+            color: #f5576c;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+
+        .meal-preview {
+            font-size: 2rem;
+            margin: 15px 0;
+        }
+
+        .meal-name {
+            color: #666;
+            font-size: 0.9rem;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .randomize-hint {
+            text-align: center;
+            margin-top: 30px;
+            color: #666;
+            font-style: italic;
         }
 
         /* Final CTA Section */
         .final-cta {
-            padding: 80px 0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 100px 0;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
             text-align: center;
             color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .final-cta::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.05) 2px, transparent 2px);
+            background-size: 40px 40px;
+            animation: drift-reverse 25s linear infinite;
+        }
+
+        @keyframes drift-reverse {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(-40px, -40px); }
         }
 
         .final-cta h2 {
-            font-size: 2.5rem;
+            font-size: 2.8rem;
             margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
         }
 
         .final-cta p {
-            font-size: 1.2rem;
-            margin-bottom: 30px;
+            font-size: 1.3rem;
+            margin-bottom: 40px;
             opacity: 0.95;
+            position: relative;
+            z-index: 1;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 50px;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+            position: relative;
+            z-index: 1;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+        }
+
+        .stat-label {
+            opacity: 0.9;
+            font-size: 1rem;
         }
 
         /* Responsive Design */
         @media (max-width: 768px) {
             .hero h1 {
-                font-size: 2rem;
+                font-size: 2.2rem;
             }
 
             .hero p {
@@ -202,8 +405,17 @@
 
             .features h2,
             .how-it-works h2,
+            .demo h2,
             .final-cta h2 {
-                font-size: 1.8rem;
+                font-size: 2rem;
+            }
+
+            .process-step:not(:last-child)::after {
+                display: none;
+            }
+
+            .week-display {
+                grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
             }
         }
     </style>
@@ -212,31 +424,42 @@
     <!-- Hero Section -->
     <section class="hero">
         <div class="container">
-            <h1>Cook Once on Sunday,<br>Eat Well All Week</h1>
-            <p>The smart meal prep system that turns your chaotic Sunday cooking into an organized, efficient process that delivers fresh meals for busy professionals all week long.</p>
-            <button class="cta-button" onclick="showAlert()">Start Your Organized Week</button>
+            <h1>Your Weekly Meals, Planned in Seconds</h1>
+            <p>Stop wasting time deciding what to eat. Get instant meal plans for your entire work week with thousands of delicious options at your fingertips.</p>
+            <div class="week-preview">
+                <span class="day-pill">Monday</span>
+                <span class="day-pill">Tuesday</span>
+                <span class="day-pill">Wednesday</span>
+                <span class="day-pill">Thursday</span>
+                <span class="day-pill">Friday</span>
+            </div>
+            <button class="cta-button" onclick="launchApp()">Start Planning My Week</button>
         </div>
     </section>
 
     <!-- Features Section -->
     <section class="features">
         <div class="container">
-            <h2>Why MealPrep Sunday Works</h2>
+            <h2>Why You'll Love This</h2>
+            <p class="features-subtitle">Three simple reasons that will change how you eat forever</p>
             <div class="features-grid">
                 <div class="feature-card">
-                    <div class="feature-icon">📋</div>
-                    <h3>Smart Kitchen Orchestration</h3>
-                    <p>Automatically schedules your cooking tasks to maximize oven use, coordinate stovetop timing, and ensure everything finishes together. No more juggling recipes or occupied appliances.</p>
+                    <div class="feature-icon">🎲</div>
+                    <h3>Instant Weekly Variety</h3>
+                    <p>Access thousands of recipes from around the world. Every week brings new flavors and cuisines to your table. From Italian pasta to Asian stir-fries, Mexican tacos to Mediterranean salads - variety is just a click away.</p>
+                    <span class="feature-highlight">10,000+ Recipes Available</span>
                 </div>
                 <div class="feature-card">
-                    <div class="feature-icon">🥗</div>
-                    <h3>Freshness Intelligence</h3>
-                    <p>Prioritizes meal consumption based on ingredient shelf life. Your salads stay crisp, proteins stay fresh, and nothing goes to waste by intelligently ordering your weekly menu.</p>
+                    <div class="feature-icon">🔄</div>
+                    <h3>Never Get Bored</h3>
+                    <p>Don't like Tuesday's meal? One click gives you a completely new option. Keep randomizing until you find exactly what you're craving. It's like having a personal chef who never runs out of ideas.</p>
+                    <span class="feature-highlight">Unlimited Re-rolls</span>
                 </div>
                 <div class="feature-card">
-                    <div class="feature-icon">🛒</div>
-                    <h3>Zero-Waste Shopping Lists</h3>
-                    <p>Combines ingredients across all recipes to eliminate waste. Buy exactly what you need with quantities calculated perfectly, saving money and reducing food waste every week.</p>
+                    <div class="feature-icon">⏰</div>
+                    <h3>Save Time & Decisions</h3>
+                    <p>Eliminate decision fatigue and the daily "what's for dinner?" stress. Plan your entire week in under a minute. Spend less time thinking about food and more time enjoying it.</p>
+                    <span class="feature-highlight">5 Days Planned in 30 Seconds</span>
                 </div>
             </div>
         </div>
@@ -246,39 +469,144 @@
     <section class="how-it-works">
         <div class="container">
             <h2>How It Works</h2>
-            <div class="steps">
-                <div class="step">
-                    <div class="step-number">1</div>
-                    <h3>Select Your Weekly Meals</h3>
-                    <p>Choose from curated recipes or add your own. The system automatically identifies ingredient overlaps and creates an optimized shopping list.</p>
+            <div class="process-flow">
+                <div class="process-step">
+                    <div class="step-visual">📅</div>
+                    <h3>Open Your Week</h3>
+                    <p>See Monday through Friday laid out clearly</p>
                 </div>
-                <div class="step">
-                    <div class="step-number">2</div>
-                    <h3>Follow Your Custom Timeline</h3>
-                    <p>Get a minute-by-minute cooking schedule that coordinates all tasks, from prep to cooking, ensuring maximum efficiency in your 3-hour Sunday session.</p>
+                <div class="process-step">
+                    <div class="step-visual">✨</div>
+                    <h3>Auto-Generate Meals</h3>
+                    <p>Instantly get a diverse meal for each day</p>
                 </div>
-                <div class="step">
-                    <div class="step-number">3</div>
-                    <h3>Enjoy Fresh Meals All Week</h3>
-                    <p>Your personalized meal calendar tells you exactly what to eat each day based on freshness, while tracking your preferences for next Sunday.</p>
+                <div class="process-step">
+                    <div class="step-visual">🎯</div>
+                    <h3>Perfect Your Plan</h3>
+                    <p>Swap any meal with one click until satisfied</p>
                 </div>
             </div>
+        </div>
+    </section>
+
+    <!-- Demo Section -->
+    <section class="demo">
+        <div class="container">
+            <h2>See It In Action</h2>
+            <p class="demo-subtitle">Your week could look like this (click any day to randomize)</p>
+            <div class="week-display">
+                <div class="day-card" onclick="animateRandomize(this)">
+                    <div class="day-name">Monday</div>
+                    <div class="meal-preview">🍝</div>
+                    <div class="meal-name">Spaghetti Carbonara</div>
+                </div>
+                <div class="day-card" onclick="animateRandomize(this)">
+                    <div class="day-name">Tuesday</div>
+                    <div class="meal-preview">🥘</div>
+                    <div class="meal-name">Chicken Tikka Masala</div>
+                </div>
+                <div class="day-card" onclick="animateRandomize(this)">
+                    <div class="day-name">Wednesday</div>
+                    <div class="meal-preview">🌮</div>
+                    <div class="meal-name">Fish Tacos</div>
+                </div>
+                <div class="day-card" onclick="animateRandomize(this)">
+                    <div class="day-name">Thursday</div>
+                    <div class="meal-preview">🍜</div>
+                    <div class="meal-name">Thai Green Curry</div>
+                </div>
+                <div class="day-card" onclick="animateRandomize(this)">
+                    <div class="day-name">Friday</div>
+                    <div class="meal-preview">🍔</div>
+                    <div class="meal-name">Gourmet Burger</div>
+                </div>
+            </div>
+            <p class="randomize-hint">👆 Click any day to see the magic of instant meal swapping</p>
         </div>
     </section>
 
     <!-- Final CTA Section -->
     <section class="final-cta">
         <div class="container">
-            <h2>Transform Your Sunday Kitchen Chaos</h2>
-            <p>Join thousands of busy professionals who've reclaimed their weeknights</p>
-            <button class="cta-button" onclick="showAlert()">Get Started Free</button>
+            <h2>Join Thousands Who've Simplified Mealtime</h2>
+            <p>Stop the daily food struggle. Start enjoying variety.</p>
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-number">52,000+</div>
+                    <div class="stat-label">Meals Planned</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number">8,400+</div>
+                    <div class="stat-label">Happy Eaters</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number">260+</div>
+                    <div class="stat-label">Hours Saved Weekly</div>
+                </div>
+            </div>
+            <button class="cta-button" onclick="launchApp()">Plan My Week Now - It's Free</button>
         </div>
     </section>
 
     <script>
-        function showAlert() {
-            alert("Welcome to MealPrep Sunday! We're launching soon. Thanks for your interest in making your meal prep more organized and efficient!");
+        const meals = [
+            { emoji: '🍕', name: 'Margherita Pizza' },
+            { emoji: '🍱', name: 'Salmon Bento Box' },
+            { emoji: '🥗', name: 'Caesar Salad' },
+            { emoji: '🍝', name: 'Fettuccine Alfredo' },
+            { emoji: '🍛', name: 'Butter Chicken' },
+            { emoji: '🌯', name: 'Chicken Burrito' },
+            { emoji: '🍲', name: 'Beef Stew' },
+            { emoji: '🥟', name: 'Pork Dumplings' },
+            { emoji: '🍤', name: 'Shrimp Scampi' },
+            { emoji: '🥩', name: 'Grilled Steak' },
+            { emoji: '🍣', name: 'Sushi Platter' },
+            { emoji: '🌮', name: 'Beef Tacos' },
+            { emoji: '🍜', name: 'Ramen Bowl' },
+            { emoji: '🥘', name: 'Paella' },
+            { emoji: '🍔', name: 'Classic Burger' }
+        ];
+
+        function animateRandomize(card) {
+            // Add spinning animation
+            card.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                // Get random meal
+                const randomMeal = meals[Math.floor(Math.random() * meals.length)];
+                const preview = card.querySelector('.meal-preview');
+                const name = card.querySelector('.meal-name');
+
+                // Update content
+                preview.style.opacity = '0';
+                name.style.opacity = '0';
+
+                setTimeout(() => {
+                    preview.textContent = randomMeal.emoji;
+                    name.textContent = randomMeal.name;
+                    preview.style.opacity = '1';
+                    name.style.opacity = '1';
+                    card.style.transform = 'scale(1)';
+                }, 200);
+            }, 100);
         }
+
+        function launchApp() {
+            alert("Welcome to Weekly Meal Planner! The app is launching soon. Get ready to revolutionize your meal planning!");
+        }
+
+        // Add smooth transition styles dynamically
+        document.addEventListener('DOMContentLoaded', () => {
+            const style = document.createElement('style');
+            style.textContent = `
+                .meal-preview, .meal-name {
+                    transition: opacity 0.3s ease;
+                }
+                .day-card {
+                    transition: transform 0.3s ease, box-shadow 0.3s ease;
+                }
+            `;
+            document.head.appendChild(style);
+        });
     </script>
 </body>
 </html>

@@ -29,6 +29,15 @@ export interface CookingTask {
   can_parallel?: boolean
 }
 
+export interface WeeklyMeal {
+  id?: string
+  meal_id: string
+  meal_name: string
+  meal_thumbnail: string
+  day_of_week: 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday'
+  week_start: string
+}
+
 // Service functions
 export const sessionService = {
   async create(data: Omit<CookingSession, 'id'>): Promise<CookingSession> {
@@ -114,6 +123,60 @@ export const taskService = {
       await pb.collection('cooking_tasks').delete(id)
     } catch (error) {
       console.error('Failed to delete task:', error)
+      throw error
+    }
+  }
+}
+
+export const weeklyMealService = {
+  async create(data: Omit<WeeklyMeal, 'id'>): Promise<WeeklyMeal> {
+    try {
+      return await pb.collection('weekly_meals').create(data)
+    } catch (error) {
+      console.error('Failed to create weekly meal:', error)
+      throw error
+    }
+  },
+
+  async getMealsForWeek(weekStart: string): Promise<WeeklyMeal[]> {
+    try {
+      const records = await pb.collection('weekly_meals').getFullList({
+        filter: `week_start >= "${weekStart}" && week_start < "${weekStart} 23:59:59"`,
+        sort: 'day_of_week'
+      })
+      return records
+    } catch (error) {
+      console.error('Failed to get weekly meals:', error)
+      return []
+    }
+  },
+
+  async updateMeal(id: string, data: Partial<WeeklyMeal>): Promise<WeeklyMeal> {
+    try {
+      return await pb.collection('weekly_meals').update(id, data)
+    } catch (error) {
+      console.error('Failed to update meal:', error)
+      throw error
+    }
+  },
+
+  async getMealForDay(weekStart: string, dayOfWeek: string): Promise<WeeklyMeal | null> {
+    try {
+      const records = await pb.collection('weekly_meals').getList(1, 1, {
+        filter: `week_start >= "${weekStart}" && week_start < "${weekStart} 23:59:59" && day_of_week = "${dayOfWeek}"`
+      })
+      return records.items[0] || null
+    } catch (error) {
+      console.error('Failed to get meal for day:', error)
+      return null
+    }
+  },
+
+  async deleteMeal(id: string): Promise<void> {
+    try {
+      await pb.collection('weekly_meals').delete(id)
+    } catch (error) {
+      console.error('Failed to delete meal:', error)
       throw error
     }
   }

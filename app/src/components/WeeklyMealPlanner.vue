@@ -1,0 +1,353 @@
+<script setup lang="ts">
+import { ref, onMounted, computed } from 'vue'
+import { weeklyMealService, type WeeklyMeal } from '../services/pocketbase'
+import { mealDBService } from '../services/mealdb'
+
+// State
+const meals = ref<WeeklyMeal[]>([])
+const loading = ref(false)
+const error = ref<string | null>(null)
+const generatingMeal = ref<string | null>(null)
+
+// Week days
+const weekDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'] as const
+
+// Get start of current week (Monday)
+const getCurrentWeekStart = (): string => {
+  const today = new Date()
+  const monday = new Date(today)
+  const day = today.getDay()
+  const diff = today.getDate() - day + (day === 0 ? -6 : 1) // Adjust when day is Sunday
+  monday.setDate(diff)
+  monday.setHours(0, 0, 0, 0)
+  return monday.toISOString().split('T')[0]
+}
+
+const currentWeekStart = ref(getCurrentWeekStart())
+
+// Computed meal map for easy access
+const mealMap = computed(() => {
+  const map: Record<string, WeeklyMeal> = {}
+  meals.value.forEach(meal => {
+    map[meal.day_of_week] = meal
+  })
+  return map
+})
+
+// Load meals for current week
+const loadMealsForWeek = async () => {
+  try {
+    loading.value = true
+    error.value = null
+
+    const existingMeals = await weeklyMealService.getMealsForWeek(currentWeekStart.value)
+
+    if (existingMeals.length === 0) {
+      // Generate new meals for the week
+      await generateMealsForWeek()
+    } else {
+      meals.value = existingMeals
+    }
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : 'Failed to load meals'
+    console.error('Error loading meals:', err)
+  } finally {
+    loading.value = false
+  }
+}
+
+// Generate meals for the entire week
+const generateMealsForWeek = async () => {
+  try {
+    loading.value = true
+    const randomMeals = await mealDBService.getMultipleRandomMeals(5)
+
+    const newMeals: WeeklyMeal[] = []
+
+    for (let i = 0; i < weekDays.length; i++) {
+      const meal = randomMeals[i]
+      const weeklyMeal: Omit<WeeklyMeal, 'id'> = {
+        meal_id: meal.id,
+        meal_name: meal.name,
+        meal_thumbnail: meal.thumbnail,
+        day_of_week: weekDays[i],
+        week_start: currentWeekStart.value
+      }
+
+      const savedMeal = await weeklyMealService.create(weeklyMeal)
+      newMeals.push(savedMeal)
+    }
+
+    meals.value = newMeals
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : 'Failed to generate meals'
+    console.error('Error generating meals:', err)
+  }
+}
+
+// Randomize meal for a specific day
+const randomizeMealForDay = async (dayOfWeek: typeof weekDays[number]) => {
+  try {
+    generatingMeal.value = dayOfWeek
+    error.value = null
+
+    const newMeal = await mealDBService.getRandomMeal()
+    const existingMeal = mealMap.value[dayOfWeek]
+
+    if (existingMeal) {
+      // Update existing meal
+      const updatedMeal = await weeklyMealService.updateMeal(existingMeal.id!, {
+        meal_id: newMeal.id,
+        meal_name: newMeal.name,
+        meal_thumbnail: newMeal.thumbnail
+      })
+
+      // Update local state
+      const index = meals.value.findIndex(m => m.id === existingMeal.id)
+      if (index !== -1) {
+        meals.value[index] = updatedMeal
+      }
+    } else {
+      // Create new meal
+      const weeklyMeal: Omit<WeeklyMeal, 'id'> = {
+        meal_id: newMeal.id,
+        meal_name: newMeal.name,
+        meal_thumbnail: newMeal.thumbnail,
+        day_of_week: dayOfWeek,
+        week_start: currentWeekStart.value
+      }
+
+      const savedMeal = await weeklyMealService.create(weeklyMeal)
+      meals.value.push(savedMeal)
+    }
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : 'Failed to randomize meal'
+    console.error('Error randomizing meal:', err)
+  } finally {
+    generatingMeal.value = null
+  }
+}
+
+// Initialize on mount
+onMounted(() => {
+  loadMealsForWeek()
+})
+</script>
+
+<template>
+  <div class="min-h-screen">
+    <!-- Hero Section -->
+    <section class="hero bg-gradient-to-r from-pink-400 via-purple-500 to-indigo-600 relative overflow-hidden">
+      <!-- Floating Pattern -->
+      <div class="absolute top-0 left-0 w-full h-full">
+        <div class="absolute top-[-50%] right-[-50%] w-[200%] h-[200%] bg-[radial-gradient(circle,_rgba(255,255,255,0.1)_1px,_transparent_1px)] [background-size:50px_50px] animate-[drift_20s_linear_infinite]"></div>
+      </div>
+
+      <div class="relative z-10 container mx-auto px-4 py-16 text-center text-white">
+        <div class="max-w-4xl mx-auto">
+          <h1 class="text-5xl md:text-6xl font-bold mb-6">Your Weekly Meals, Planned in Seconds</h1>
+          <p class="text-xl md:text-2xl mb-8 opacity-95">
+            Your delicious meals for {{ new Date(currentWeekStart).toLocaleDateString() }} - {{ new Date(new Date(currentWeekStart).getTime() + 4 * 24 * 60 * 60 * 1000).toLocaleDateString() }}
+          </p>
+
+          <!-- Week Pills -->
+          <div class="flex justify-center gap-4 mb-12 flex-wrap">
+            <span v-for="day in weekDays" :key="day" class="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-sm border border-white/30">
+              {{ day }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Content -->
+    <section class="py-16 bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50">
+      <div class="container mx-auto px-4">
+        <!-- Loading State -->
+        <div v-if="loading" class="text-center py-16">
+          <div class="inline-flex items-center px-8 py-4 border border-transparent text-lg font-medium rounded-full shadow-lg text-white bg-gradient-to-r from-pink-500 to-purple-600">
+            <svg class="animate-spin -ml-1 mr-3 h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Generating your weekly meals...
+          </div>
+        </div>
+
+        <!-- Error State -->
+        <div v-else-if="error" class="text-center py-16">
+          <div class="bg-red-50 border border-red-200 rounded-xl p-8 max-w-md mx-auto">
+            <div class="flex items-start">
+              <div class="flex-shrink-0">
+                <svg class="h-6 w-6 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                </svg>
+              </div>
+              <div class="ml-3">
+                <h3 class="text-lg font-medium text-red-800">Something went wrong</h3>
+                <div class="mt-2 text-red-700">{{ error }}</div>
+                <button
+                  @click="loadMealsForWeek()"
+                  class="mt-4 bg-red-100 hover:bg-red-200 text-red-800 px-6 py-2 rounded-lg font-medium transition-colors"
+                >
+                  Try Again
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hero Cards Layout -->
+        <div v-else class="max-w-6xl mx-auto">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+            <div
+              v-for="day in weekDays"
+              :key="day"
+              class="day-card bg-white rounded-xl p-6 text-center shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl cursor-pointer"
+            >
+              <!-- Day Name -->
+              <div class="day-name font-bold text-pink-600 mb-3 text-lg">{{ day }}</div>
+
+              <!-- Meal Content -->
+              <div v-if="mealMap[day]">
+                <!-- Meal Image -->
+                <div class="meal-preview mb-4">
+                  <img
+                    :src="mealMap[day].meal_thumbnail"
+                    :alt="mealMap[day].meal_name"
+                    class="w-20 h-20 mx-auto rounded-full object-cover shadow-md"
+                    loading="lazy"
+                  />
+                </div>
+
+                <!-- Meal Name -->
+                <div class="meal-name text-gray-600 text-sm mb-4 h-10 flex items-center justify-center leading-tight">
+                  {{ mealMap[day].meal_name }}
+                </div>
+
+                <!-- Randomize Button -->
+                <button
+                  @click="randomizeMealForDay(day)"
+                  :disabled="generatingMeal === day"
+                  class="w-full px-4 py-2 bg-gradient-to-r from-pink-500 to-purple-600 text-white text-sm font-medium rounded-lg hover:from-pink-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg"
+                >
+                  <span v-if="generatingMeal === day" class="flex items-center justify-center">
+                    <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Finding...
+                  </span>
+                  <span v-else class="flex items-center justify-center">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                    Randomize
+                  </span>
+                </button>
+              </div>
+
+              <!-- Empty State -->
+              <div v-else class="py-4">
+                <div class="text-gray-400 mb-4">
+                  <div class="w-20 h-20 mx-auto rounded-full bg-gray-100 flex items-center justify-center">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                    </svg>
+                  </div>
+                </div>
+                <p class="text-sm text-gray-500 mb-4 h-10 flex items-center justify-center">No meal planned</p>
+                <button
+                  @click="randomizeMealForDay(day)"
+                  :disabled="generatingMeal === day"
+                  class="w-full px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Generate Meal
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Randomize Hint -->
+          <p class="text-center mt-8 text-gray-600 italic">
+            👆 Click any Randomize button to swap meals instantly
+          </p>
+
+          <!-- Generate New Week Button -->
+          <div class="text-center mt-12">
+            <button
+              @click="generateMealsForWeek()"
+              :disabled="loading"
+              class="inline-flex items-center px-8 py-4 border border-transparent text-lg font-semibold rounded-full text-white bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-1"
+            >
+              <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+              </svg>
+              Generate New Week
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</template>
+
+<style scoped>
+.container {
+  max-width: 1200px;
+}
+
+.hero {
+  position: relative;
+}
+
+.day-card {
+  min-height: 280px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.day-name {
+  color: #f5576c;
+  font-weight: bold;
+  font-size: 1.1rem;
+  margin-bottom: 12px;
+}
+
+.meal-preview img {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin: 0 auto;
+}
+
+.meal-name {
+  color: #666;
+  font-size: 0.9rem;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.3;
+  padding: 0 4px;
+}
+
+@keyframes drift {
+  0% { transform: translate(0, 0); }
+  100% { transform: translate(50px, 50px); }
+}
+
+@media (max-width: 640px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>

@@ -1,0 +1,210 @@
+[
+  {
+    "id": "recipes_collection",
+    "name": "recipes",
+    "type": "base",
+    "system": false,
+    "schema": [
+      {
+        "id": "name_field",
+        "name": "name",
+        "type": "text",
+        "system": false,
+        "required": true,
+        "options": {
+          "min": 1,
+          "max": 100,
+          "pattern": ""
+        }
+      },
+      {
+        "id": "total_time_field",
+        "name": "total_time",
+        "type": "number",
+        "system": false,
+        "required": true,
+        "options": {
+          "min": 5,
+          "max": 300,
+          "noDecimal": true
+        }
+      },
+      {
+        "id": "servings_field",
+        "name": "servings",
+        "type": "number",
+        "system": false,
+        "required": true,
+        "options": {
+          "min": 1,
+          "max": 20,
+          "noDecimal": true
+        }
+      }
+    ],
+    "indexes": [],
+    "listRule": "",
+    "viewRule": "",
+    "createRule": "",
+    "updateRule": "",
+    "deleteRule": ""
+  },
+  {
+    "id": "sessions_collection",
+    "name": "cooking_sessions",
+    "type": "base",
+    "system": false,
+    "schema": [
+      {
+        "id": "date_field",
+        "name": "date",
+        "type": "date",
+        "system": false,
+        "required": true,
+        "options": {
+          "min": "",
+          "max": ""
+        }
+      },
+      {
+        "id": "duration_field",
+        "name": "duration_minutes",
+        "type": "number",
+        "system": false,
+        "required": true,
+        "options": {
+          "min": 30,
+          "max": 360,
+          "noDecimal": true
+        }
+      },
+      {
+        "id": "status_field",
+        "name": "status",
+        "type": "select",
+        "system": false,
+        "required": false,
+        "options": {
+          "maxSelect": 1,
+          "values": [
+            "planned",
+            "in_progress",
+            "completed"
+          ]
+        }
+      }
+    ],
+    "indexes": [],
+    "listRule": "",
+    "viewRule": "",
+    "createRule": "",
+    "updateRule": "",
+    "deleteRule": ""
+  },
+  {
+    "id": "tasks_collection",
+    "name": "cooking_tasks",
+    "type": "base",
+    "system": false,
+    "schema": [
+      {
+        "id": "session_id_field",
+        "name": "session_id",
+        "type": "text",
+        "system": false,
+        "required": true,
+        "options": {
+          "min": 1,
+          "max": 50,
+          "pattern": ""
+        }
+      },
+      {
+        "id": "recipe_id_field",
+        "name": "recipe_id",
+        "type": "text",
+        "system": false,
+        "required": true,
+        "options": {
+          "min": 1,
+          "max": 50,
+          "pattern": ""
+        }
+      },
+      {
+        "id": "task_name_field",
+        "name": "task_name",
+        "type": "text",
+        "system": false,
+        "required": true,
+        "options": {
+          "min": 1,
+          "max": 100,
+          "pattern": ""
+        }
+      },
+      {
+        "id": "duration_minutes_field",
+        "name": "duration_minutes",
+        "type": "number",
+        "system": false,
+        "required": true,
+        "options": {
+          "min": 1,
+          "max": 180,
+          "noDecimal": true
+        }
+      },
+      {
+        "id": "appliance_field",
+        "name": "appliance",
+        "type": "text",
+        "system": false,
+        "required": true,
+        "options": {
+          "min": 1,
+          "max": 20,
+          "pattern": ""
+        }
+      },
+      {
+        "id": "start_time_field",
+        "name": "start_time",
+        "type": "number",
+        "system": false,
+        "required": false,
+        "options": {
+          "min": 0,
+          "max": 1440,
+          "noDecimal": true
+        }
+      },
+      {
+        "id": "order_priority_field",
+        "name": "order_priority",
+        "type": "number",
+        "system": false,
+        "required": true,
+        "options": {
+          "min": 1,
+          "max": 99,
+          "noDecimal": true
+        }
+      },
+      {
+        "id": "can_parallel_field",
+        "name": "can_parallel",
+        "type": "bool",
+        "system": false,
+        "required": false,
+        "options": {}
+      }
+    ],
+    "indexes": [],
+    "listRule": "",
+    "viewRule": "",
+    "createRule": "",
+    "updateRule": "",
+    "deleteRule": ""
+  }
+]
