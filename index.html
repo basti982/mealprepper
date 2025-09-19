@@ -450,10 +450,10 @@
                     <span class="feature-highlight">10,000+ Recipes Available</span>
                 </div>
                 <div class="feature-card">
-                    <div class="feature-icon">🔄</div>
-                    <h3>Never Get Bored</h3>
-                    <p>Don't like Tuesday's meal? One click gives you a completely new option. Keep randomizing until you find exactly what you're craving. It's like having a personal chef who never runs out of ideas.</p>
-                    <span class="feature-highlight">Unlimited Re-rolls</span>
+                    <div class="feature-icon">🔍</div>
+                    <h3>Full Recipe Details</h3>
+                    <p>Click any day card to see complete recipes with ingredients, measurements, and step-by-step cooking instructions. Plus YouTube videos and original source links for the perfect cooking experience.</p>
+                    <span class="feature-highlight">Complete Cooking Guide</span>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">⏰</div>
@@ -591,7 +591,8 @@
         }
 
         function launchApp() {
-            alert("Welcome to Weekly Meal Planner! The app is launching soon. Get ready to revolutionize your meal planning!");
+            // For now, show instructions since the app needs backend setup
+            alert("Welcome to Weekly Meal Planner!\n\nTo run the app locally:\n1. Start the backend: cd backend && ./pocketbase serve\n2. Start the frontend: cd app && npm run dev\n3. Open http://localhost:5176\n\nFeatures include:\n✓ Click any day card to view full recipe details\n✓ Randomize individual meals\n✓ Generate entirely new weekly meal plans\n✓ Thousands of recipes with ingredients & instructions");
         }
 
         // Add smooth transition styles dynamically
